@@ -2,6 +2,7 @@ package socket;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
@@ -88,7 +89,7 @@ public class server_thread {
 		RecieveFromClientThread recieve = new RecieveFromClientThread(clientSocket, aeskey);
 		Thread thread = new Thread(recieve);
 		thread.start();
-		SendToClientThread send = new SendToClientThread(clientSocket);
+		SendToClientThread send = new SendToClientThread(clientSocket,aeskey);
 		Thread thread2 = new Thread(send);
 		thread2.start();
 	}}
@@ -97,9 +98,8 @@ class RecieveFromClientThread implements Runnable
 	Socket clientSocket=null;
 	//BufferedReader brBufferedReader = null;
 	DataInputStream reader = null;
-	//SecretKey AES;
 	String aeskey;
-	public RecieveFromClientThread(Socket clientSocket, String aeskey /*SecretKey AES*/)
+	public RecieveFromClientThread(Socket clientSocket, String aeskey)
 	{
 		this.clientSocket = clientSocket;
 		this.aeskey = aeskey;
@@ -121,10 +121,6 @@ class RecieveFromClientThread implements Runnable
 				System.out.println("The encrypted string from client is: " + messageCipher);
 				AES aes = new AES(aeskey);
 				String decdata = aes.decrypt(messageCipher);
-				//System.out.println("decrypted data - " + decdata);
-//				Cipher cipherA = Cipher.getInstance("RSA");
-//				cipherA.init(Cipher.DECRYPT_MODE, serverPrivateKey);
-//				String plainText = new String(cipherA.doFinal(cipherText));
 				System.out.println("The Message from client is: " + decdata);	
 				System.out.println("Please enter something to send back to client..");	
 				
@@ -140,6 +136,9 @@ class SendToClientThread implements Runnable
 	PrintWriter pwPrintWriter;
 	Socket clientSock = null;
 	String aeskey;
+	DataOutputStream dos = null;
+	BufferedReader input = null;
+	
 	public SendToClientThread(Socket clientSock, String aeskey)
 	{
 		this.clientSock = clientSock;
@@ -148,16 +147,23 @@ class SendToClientThread implements Runnable
 	public void run() {
 		try{
 		pwPrintWriter =new PrintWriter(new OutputStreamWriter(this.clientSock.getOutputStream()));//get outputstream
-		
+		dos = new DataOutputStream(clientSock.getOutputStream());
 		while(true)
 		{
+			input = new BufferedReader(new InputStreamReader(System.in));//get user input
 			String msgToClientString = null;
-			BufferedReader input = new BufferedReader(new InputStreamReader(System.in));//get userinput
-			
 			msgToClientString = input.readLine();//get message to send to client
-			
+			AES aes = new AES("asilkjdhgbytksgr");
+			SecretKeySpec aeskey1 = aes.generateKey();
+			byte[] aeskey2 = aeskey1.getEncoded();
+			String aeskey = new String(aeskey2);
 			pwPrintWriter.println(msgToClientString);//send message to client with PrintWriter
-			pwPrintWriter.flush();//flush the PrintWriter
+			String encdata = aes.encrypt(msgToClientString);
+			byte[] cip = encdata.getBytes();
+			dos.writeInt(cip.length);
+			dos.write(cip);
+			dos.flush();
+//			pwPrintWriter.flush();//flush the PrintWriter
 			System.out.println("Please enter something to send back to client..");
 		}//end while
 		}

@@ -1,6 +1,7 @@
 package socket;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
@@ -71,7 +72,7 @@ public class client_thread {
 			
 			SendThread sendThread = new SendThread(sock, aeskey);
 			Thread thread = new Thread(sendThread);thread.start();
-			RecieveThread recieveThread = new RecieveThread(sock);
+			RecieveThread recieveThread = new RecieveThread(sock, aeskey);
 			Thread thread2 =new Thread(recieveThread);thread2.start();
 		} catch (Exception e) {System.out.println(e.getMessage());} 
 	}
@@ -125,19 +126,38 @@ class RecieveThread implements Runnable
 {
 	Socket sock=null;
 	BufferedReader recieve=null;
-	
-	public RecieveThread(Socket sock) {
+	DataInputStream reader = null;
+	String aeskey;
+	public RecieveThread(Socket sock, String aeskey) {
 		this.sock = sock;
+		this.aeskey = aeskey;
 	}//end constructor
 	public void run() {
 		try{
 		recieve = new BufferedReader(new InputStreamReader(this.sock.getInputStream()));//get inputstream
-		String msgRecieved = null;
-		while((msgRecieved = recieve.readLine())!= null)
-		{
-			System.out.println("From Server: " + msgRecieved);
+		reader = new DataInputStream(sock.getInputStream());
+		while(true){
+			int length_message  = reader.readInt();
+			byte[] cipherText = null;
+			if(length_message>0) {
+				cipherText = new byte[length_message];
+				reader.readFully(cipherText, 0, cipherText.length); // read the encrypted AES key
+			}
+			System.out.println("The encrypted Message from server is: " + cipherText);
+			String messageCipher = new String(cipherText);
+			System.out.println("The encrypted string from servr is: " + messageCipher);
+			AES aes = new AES(aeskey);
+			String decdata = aes.decrypt(messageCipher);
+			System.out.println("The Message from server is: " + decdata);
 			System.out.println("Please enter something to send to server..");
 		}
+		
+//		String msgRecieved = null;
+//		while((msgRecieved = recieve.readLine())!= null)
+//		{
+//			System.out.println("From Server: " + msgRecieved);
+//			System.out.println("Please enter something to send to server..");
+//		}
 		}catch(Exception e){System.out.println(e.getMessage());}
 	}//end run
 }//end class recieve thread
