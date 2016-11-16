@@ -59,7 +59,6 @@ public class server_thread {
 		
 //		// ------------------Read ENCRYPTED AES KEY FROM CLIENT and DECRYPT IT----------------------//
 		
-		
 		DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
 		int length = dis.readInt();
 		byte[] cipheraeskey = null;
@@ -70,20 +69,10 @@ public class server_thread {
 		String cipheraeskey1=new String(cipheraeskey);
 		System.out.println("cipheraeskey is " + cipheraeskey1);
 		Cipher cipher = Cipher.getInstance("RSA");
-		cipher.init(Cipher.DECRYPT_MODE, serverKey.getPrivate());
+		cipher.init(Cipher.DECRYPT_MODE, serverPrivateKey);
 		String aeskey = new String(cipher.doFinal(cipheraeskey));
         System.out.println("the aeskey is " + aeskey);
-
-
-//		cipherR.init(Cipher.DECRYPT_MODE, serverPrivateKey);
-//		String AESKey = new String(cipherR.doFinal(cipherAESKey));
-//		System.out.println("The AES secrect key from client is: " + AESKey);
-//		byte[] key = AESKey.getBytes();
-//		//System.out.println("AES length is: " + key.length);
-//		SecretKey AES = new SecretKeySpec(key, 0 ,key.length, "AES");
-//		System.out.println("AES is: " + key.length);
-//		
-//		// ------------------Read ENCRYPTED AES KEY FROM CLIENT and DECRYPT IT----------------------//
+        // ------------------Read ENCRYPTED AES KEY FROM CLIENT and DECRYPT IT----------------------//
 		
 		//create two threads to send and receive from client
 		RecieveFromClientThread recieve = new RecieveFromClientThread(clientSocket, aeskey);
@@ -115,7 +104,7 @@ class RecieveFromClientThread implements Runnable
 				if(length_message>0) {
 					cipherText = new byte[length_message];
 					reader.readFully(cipherText, 0, cipherText.length); // read the encrypted AES key
-				}
+					}
 				System.out.println("The encrypted Message from client is: " + cipherText);
 				String messageCipher = new String(cipherText);
 				System.out.println("The encrypted string from client is: " + messageCipher);

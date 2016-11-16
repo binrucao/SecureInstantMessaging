@@ -26,8 +26,6 @@ public class client_thread {
 		try {
 			Socket sock = new Socket(InetAddress.getLocalHost(),9995);
 			
-			String password = "1234";
-			
 			// ------------------KEY EXCHANGE----------------------//
 			System.out.println("First step: Public key exchange");
 			// get the RSA public key from socket.
@@ -142,7 +140,7 @@ class RecieveThread implements Runnable
 			if(length_message>0) {
 				cipherText = new byte[length_message];
 				reader.readFully(cipherText, 0, cipherText.length); // read the encrypted AES key
-			}
+				}
 			System.out.println("The encrypted Message from server is: " + cipherText);
 			String messageCipher = new String(cipherText);
 			System.out.println("The encrypted string from servr is: " + messageCipher);
@@ -150,14 +148,7 @@ class RecieveThread implements Runnable
 			String decdata = aes.decrypt(messageCipher);
 			System.out.println("The Message from server is: " + decdata);
 			System.out.println("Please enter something to send to server..");
-		}
-		
-//		String msgRecieved = null;
-//		while((msgRecieved = recieve.readLine())!= null)
-//		{
-//			System.out.println("From Server: " + msgRecieved);
-//			System.out.println("Please enter something to send to server..");
-//		}
+			}
 		}catch(Exception e){System.out.println(e.getMessage());}
 	}//end run
 }//end class recieve thread
