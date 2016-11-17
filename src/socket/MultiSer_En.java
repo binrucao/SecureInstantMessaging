@@ -1,6 +1,8 @@
 package socket;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.PrintStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -20,22 +22,14 @@ import javax.crypto.NoSuchPaddingException;
 
 import java.net.ServerSocket;
 
-/*
- * A chat server that delivers public and private messages.
- */
-public class Multi_Server {
+public class MultiSer_En {
 
-	// The server socket.
 	private static ServerSocket serverSocket = null;
-	// The client socket.
 	private static Socket clientSocket = null;
-
-	// This chat server can accept up to maxClientsCount clients' connections.
 	private static final int maxClientsCount = 10;
-	private static final clientThread[] threads = new clientThread[maxClientsCount];
+	private static final clientThread111[] threads = new clientThread111[maxClientsCount];
 
-	public static void main(String args[]) throws IOException, NoSuchAlgorithmException, ClassNotFoundException,
-			NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+	public static void main(String args[]) throws Exception {
 		// The default port number.
 		int portNumber = 2222;
 		if (args.length < 1) {
@@ -45,36 +39,61 @@ public class Multi_Server {
 			portNumber = Integer.valueOf(args[0]).intValue();
 		}
 
-		/*
-		 * Open a server socket on the portNumber (default 2222). Note that we
-		 * can not choose a port less than 1023 if we are not privileged users
-		 * (root).
-		 */
 		try {
 			serverSocket = new ServerSocket(portNumber);
 		} catch (IOException e) {
 			System.out.println(e);
 		}
 
-		/*
-		 * Create a client socket for each connection and pass it to a new
-		 * client thread.
-		 */
+		// Generate the RSA key pair 
+		KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+		keyGen.initialize(512);
+		KeyPair serverKey = keyGen.generateKeyPair();
+		PublicKey serverPublicKey = serverKey.getPublic();
+		PrivateKey serverPrivateKey = serverKey.getPrivate();
+
+		
 		while (true) {
 			try {
-
 				clientSocket = serverSocket.accept();
+				// send server's public key to client
+				ObjectOutputStream oos = new ObjectOutputStream(clientSocket.getOutputStream());
+				System.out.println("Server Public Key is: " + serverPublicKey);
+				oos.writeObject(serverPublicKey);
+				oos.flush();
+				
+				// ------------------Read ENCRYPTED AES KEY FROM CLIENT and DECRYPT IT----------------------//
+				
+				DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
+				int length = dis.readInt();
+				byte[] cipheraeskey = null;
+				if(length>0) {
+					cipheraeskey = new byte[length];
+				    dis.readFully(cipheraeskey, 0, cipheraeskey.length); // read the cipheraeskey
+				}
+				String cipheraeskey1=new String(cipheraeskey);
+				System.out.println("cipheraeskey is " + cipheraeskey1);
+				Cipher cipher = Cipher.getInstance("RSA");
+				cipher.init(Cipher.DECRYPT_MODE, serverPrivateKey);
+				String aeskey = new String(cipher.doFinal(cipheraeskey));
+		        System.out.println("the aeskey is " + aeskey);
+		        
+		        AES aes = new AES("asilkjdhgbytksgr");
+				
 				int i = 0;
 				for (i = 0; i < maxClientsCount; i++) {
 					if (threads[i] == null) {
-						(threads[i] = new clientThread(clientSocket, threads)).start();
+						(threads[i] = new clientThread111(clientSocket, threads, aes)).start();
 						break;
 					}
 				}
 				if (i == maxClientsCount) {
-					PrintStream os = new PrintStream(clientSocket.getOutputStream());
-					os.println("Server too busy. Try later.");
-					os.close();
+					PrintStream pos = new PrintStream(clientSocket.getOutputStream());
+					String comment1 = "Server too busy. Try later.";
+					String enComment1 = aes.encrypt(comment1);
+					pos.println(enComment1);
+					//pos.println("Server too busy. Try later.");
+					pos.close();
 					clientSocket.close();
 				}
 			} catch (IOException e) {
@@ -84,54 +103,57 @@ public class Multi_Server {
 	}
 }
 
-/*
- * The chat client thread. This client thread opens the input and the output
- * streams for a particular client, ask the client's name, informs all the
- * clients connected to the server about the fact that a new client has joined
- * the chat room, and as long as it receive data, echos that data back to all
- * other clients. The thread broadcast the incoming messages to all clients and
- * routes the private message to the particular client. When a client leaves the
- * chat room this thread informs also all the clients about that and terminates.
- */
-class clientThread extends Thread {
+class clientThread111 extends Thread {
 
 	private String clientName = null;
 	private DataInputStream is = null;
-	private PrintStream os = null;
+	private PrintStream pos = null;
 	private Socket clientSocket = null;
-	private final clientThread[] threads;
+	private final clientThread111[] threads;
 	private int maxClientsCount;
+	private DataOutputStream dos = null;
+	private ByteArrayOutputStream baos = null;
+	AES aes;
 
-
-	public clientThread(Socket clientSocket, clientThread[] threads) {
+	public clientThread111(Socket clientSocket, clientThread111[] threads, AES aes) {
 		this.clientSocket = clientSocket;
 		this.threads = threads;
+		this.aes = aes;
 		maxClientsCount = threads.length;
 	}
-
+	
+	public static String parseByte2HexStr(byte buf[]) {
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < buf.length; i++) {
+                String hex = Integer.toHexString(buf[i] & 0xFF);
+                if (hex.length() == 1) {
+                        //hex = ‘0’+hex;
+                }
+                sb.append(hex.toUpperCase());
+        }
+        return sb.toString();
+	}
+	
 	public void run() {
 		int maxClientsCount = this.maxClientsCount;
-		clientThread[] threads = this.threads;
+		clientThread111[] threads = this.threads;
 
 		try {
-			/*
-			 * Create input and output streams for this client.
-			 */
 			is = new DataInputStream(clientSocket.getInputStream());
-			os = new PrintStream(clientSocket.getOutputStream());
+			pos = new PrintStream(clientSocket.getOutputStream());
 			String name;
 			while (true) {
-				os.println("Enter your name.");
+				pos.println(aes.encrypt("*Enter your name."));
 				name = is.readLine().trim();
 				if (name.indexOf('@') == -1) {
 					break;
 				} else {
-					os.println("The name should not contain '@' character.");
+					pos.println(aes.encrypt("*The name should not contain '@' character."));
 				}
 			}
 
 			/* Welcome the new the client. */
-			os.println("Welcome " + name + " to our chat room.\nTo leave enter /quit in a new line.");
+			pos.println(aes.encrypt("*Welcome " + name + " to our chat room.\nTo leave enter /quit in a new line."));
 			synchronized (this) {
 				for (int i = 0; i < maxClientsCount; i++) {
 					if (threads[i] != null && threads[i] == this) {
@@ -141,7 +163,7 @@ class clientThread extends Thread {
 				}
 				for (int i = 0; i < maxClientsCount; i++) {
 					if (threads[i] != null && threads[i] != this) {
-						threads[i].os.println("*** A new user " + name + " entered the chat room !!! ***");
+						threads[i].pos.println(aes.encrypt("*** A new user " + name + " entered the chat room !!! ***"));
 					}
 				}
 			}
@@ -161,12 +183,13 @@ class clientThread extends Thread {
 								for (int i = 0; i < maxClientsCount; i++) {
 									if (threads[i] != null && threads[i] != this && threads[i].clientName != null
 											&& threads[i].clientName.equals(words[0])) {
-										threads[i].os.println("<" + name + "> " + words[1]);
+										threads[i].pos.println(aes.encrypt("*<" + name + ">* "+ words[1]));
+										
 										/*
 										 * Echo this message to let the client
 										 * know the private message was sent.
 										 */
-										this.os.println(">" + name + "> " + words[1]);
+										this.pos.println("***" + name + ">>> " + words[1]);
 										break;
 									}
 								}
@@ -181,7 +204,7 @@ class clientThread extends Thread {
 						
 						for (int i = 0; i < maxClientsCount; i++) {
 							if (threads[i] != null && threads[i].clientName != null) {
-								threads[i].os.println("<" + name + "> " + line);
+								threads[i].pos.println(aes.encrypt("*<" + name + ">* " + "@@" + line));
 							}
 						}
 					}
@@ -190,16 +213,11 @@ class clientThread extends Thread {
 			synchronized (this) {
 				for (int i = 0; i < maxClientsCount; i++) {
 					if (threads[i] != null && threads[i] != this && threads[i].clientName != null) {
-						threads[i].os.println("*** The user " + name + " is leaving the chat room !!! ***");
+						threads[i].pos.println(aes.encrypt("*** The user " + name + " is leaving the chat room !!! ***"));
 					}
 				}
 			}
-			os.println("*** Bye " + name + " ***");
-
-			/*
-			 * Clean up. Set the current thread variable to null so that a new
-			 * client could be accepted by the server.
-			 */
+			pos.println(aes.encrypt("*** Bye " + name + " ***"));
 			synchronized (this) {
 				for (int i = 0; i < maxClientsCount; i++) {
 					if (threads[i] == this) {
@@ -207,12 +225,9 @@ class clientThread extends Thread {
 					}
 				}
 			}
-			/*
-			 * Close the output stream, close the input stream, close the
-			 * socket.
-			 */
 			is.close();
-			os.close();
+			pos.close();
+			dos.close();
 			clientSocket.close();
 		} catch (Exception e) {
 		}

@@ -92,7 +92,7 @@ class RecieveFromClientThread implements Runnable
 	{
 		this.clientSocket = clientSocket;
 		this.aeskey = aeskey;
-	}//end constructor
+	}
 	public void run() {
 		try{
 			while(true){
@@ -119,7 +119,7 @@ class RecieveFromClientThread implements Runnable
 				}
 		}catch(Exception ex){System.out.println(ex.getMessage());}
 	}
-}//end class RecieveFromClientThread
+}
 class SendToClientThread implements Runnable
 {
 	PrintWriter pwPrintWriter;
@@ -154,8 +154,8 @@ class SendToClientThread implements Runnable
 			dos.flush();
 //			pwPrintWriter.flush();//flush the PrintWriter
 			System.out.println("Please enter something to send back to client..");
-		}//end while
+		}
 		}
 		catch(Exception ex){System.out.println(ex.getMessage());}	
-	}//end run
-}//end class SendToClientThread
+	}
+}

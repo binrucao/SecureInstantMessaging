@@ -88,7 +88,7 @@ class SendThread implements Runnable
 	{
 		this.sock = sock;
 		this.aeskey = aeskey;
-	}//end constructor
+	}
 	public void run(){
 		try{
 		if(sock.isConnected())
@@ -115,10 +115,10 @@ class SendThread implements Runnable
 		
 			if(msgtoServerString.equals("EXIT"))
 			break;
-			}//end while
+			}
 		sock.close();}}catch(Exception e){System.out.println(e.getMessage());}
-	}//end run method
-}//end class
+	}
+}
 
 class RecieveThread implements Runnable
 {
@@ -150,5 +150,5 @@ class RecieveThread implements Runnable
 			System.out.println("Please enter something to send to server..");
 			}
 		}catch(Exception e){System.out.println(e.getMessage());}
-	}//end run
-}//end class recieve thread
+	}
+}
