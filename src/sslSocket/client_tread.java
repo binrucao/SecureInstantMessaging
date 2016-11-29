@@ -10,38 +10,46 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.BufferedReader;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
+
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
-import java.net.InetAddress;
+
 import java.net.Socket;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.SecureRandom;
+
 
 import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
+
 import javax.crypto.spec.SecretKeySpec;
 import javax.net.SocketFactory;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+import java.awt.Color;
 
 public class client_tread {
+	public client_tread() {
+	}
 
 	private static String CLIENT_KEY_STORE = "/Users/binrucao/client_ks";   
 	private static String CLIENT_KEY_STORE_PASSWORD = "client";
 	private TextArea ta;
+	
 	private TextField tf;
 	private static Socket sock;
 	private static DataInputStream dis;
@@ -51,6 +59,9 @@ public class client_tread {
 
 	public static void main(String[] args) throws Exception
 	{
+//		Log3 frameTabel = new Log3();
+//		frameTabel.actionlogin();
+		
 		client_tread client = new client_tread();
 		client.connect();
 
@@ -103,9 +114,12 @@ public class client_tread {
 	}
 	public void createUI(String aeskey) {
 		Frame f = new Frame("Client");
+		f.setBackground(new Color(250, 240, 230));
 		ta = new TextArea();
+		ta.setBackground(new Color(250, 240, 230));
 		tf = new TextField();
 		Button send = new Button("send");
+		send.setForeground(new Color(123, 104, 238));
 		Panel p = new Panel();
 		p.setLayout(new BorderLayout());
 		p.add(tf, "Center");
@@ -120,7 +134,7 @@ public class client_tread {
 				System.exit(0);
 			}
 		});
-		f.setSize(400, 400);
+		f.setSize(540, 390);
 		f.setLocation(600, 0);
 		f.setVisible(true);
 	}
@@ -258,7 +272,7 @@ class RecieveThread extends Thread
 				AES aes = new AES(aeskey);
 				String decdata = aes.decrypt(messageCipher);
 				System.out.println("The Message from server is: " + decdata);
-				ta.append("Server(other): " + decdata + "\n");
+				ta.append("Server: " + decdata + "\n");
 
 				if(decdata.equals("EXIT")){
 					client.close();
@@ -268,3 +282,54 @@ class RecieveThread extends Thread
 		}catch(Exception e){System.out.println(e.getMessage());}
 	}//end run
 }//end class recieve thread
+
+
+class Log3 extends JFrame {
+
+	JButton blogin = new JButton("Login");
+	JPanel panel = new JPanel();
+	JTextField txuser = new JTextField(15);
+	JPasswordField pass = new JPasswordField(15);
+
+	Log3() {
+		super("Login Autentification");
+		setSize(300, 200);
+		setLocation(500, 280);
+		panel.setLayout(null);
+
+		txuser.setBounds(70, 30, 150, 20);
+		pass.setBounds(70, 65, 150, 20);
+		blogin.setBounds(110, 100, 80, 20);
+
+		panel.add(blogin);
+		panel.add(txuser);
+		panel.add(pass);
+
+		getContentPane().add(panel);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+		actionlogin();
+	}
+
+	public void actionlogin() {
+		blogin.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent ae) {
+				String puname = txuser.getText();
+				String ppaswd = pass.getText();
+				if (puname.equals("test") && ppaswd.equals("12345")) {
+//					// newframe regFace = new newframe();
+//					client_tread regFace = new client_tread();
+//					regFace.setVisible(true);
+					dispose();
+				} else {
+
+					JOptionPane.showMessageDialog(null, "Wrong Password / Username");
+					txuser.setText("");
+					pass.setText("");
+					txuser.requestFocus();
+				}
+
+			}
+		});
+	}
+}

@@ -1,10 +1,12 @@
 package socket;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.PrintStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
@@ -21,6 +23,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 import java.net.ServerSocket;
+import java.net.InetAddress;
 
 public class MultiSer_En {
 
@@ -30,7 +33,6 @@ public class MultiSer_En {
 	private static final clientThread111[] threads = new clientThread111[maxClientsCount];
 
 	public static void main(String args[]) throws Exception {
-		// The default port number.
 		int portNumber = 2222;
 		if (args.length < 1) {
 			System.out.println(
@@ -78,7 +80,7 @@ public class MultiSer_En {
 				String aeskey = new String(cipher.doFinal(cipheraeskey));
 		        System.out.println("the aeskey is " + aeskey);
 		        
-		        AES aes = new AES("asilkjdhgbytksgr");
+		        AES aes = new AES(aeskey);
 				
 				int i = 0;
 				for (i = 0; i < maxClientsCount; i++) {
@@ -89,10 +91,7 @@ public class MultiSer_En {
 				}
 				if (i == maxClientsCount) {
 					PrintStream pos = new PrintStream(clientSocket.getOutputStream());
-					String comment1 = "Server too busy. Try later.";
-					String enComment1 = aes.encrypt(comment1);
-					pos.println(enComment1);
-					//pos.println("Server too busy. Try later.");
+					pos.println(aes.encrypt("Server too busy. Try later."));
 					pos.close();
 					clientSocket.close();
 				}
@@ -107,6 +106,7 @@ class clientThread111 extends Thread {
 
 	private String clientName = null;
 	private DataInputStream is = null;
+	private BufferedReader br = null;
 	private PrintStream pos = null;
 	private Socket clientSocket = null;
 	private final clientThread111[] threads;
@@ -140,11 +140,12 @@ class clientThread111 extends Thread {
 
 		try {
 			is = new DataInputStream(clientSocket.getInputStream());
+			br = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 			pos = new PrintStream(clientSocket.getOutputStream());
 			String name;
 			while (true) {
 				pos.println(aes.encrypt("*Enter your name."));
-				name = is.readLine().trim();
+				name = br.readLine().trim();
 				if (name.indexOf('@') == -1) {
 					break;
 				} else {
@@ -153,7 +154,7 @@ class clientThread111 extends Thread {
 			}
 
 			/* Welcome the new the client. */
-			pos.println(aes.encrypt("*Welcome " + name + " to our chat room.\nTo leave enter /quit in a new line."));
+			pos.println(aes.encrypt("*Welcome "  + " to our chat room.\nTo leave enter /quit in a new line."));
 			synchronized (this) {
 				for (int i = 0; i < maxClientsCount; i++) {
 					if (threads[i] != null && threads[i] == this) {
@@ -169,7 +170,7 @@ class clientThread111 extends Thread {
 			}
 			/* Start the conversation. */
 			while (true) {
-				String line = is.readLine();
+				String line = br.readLine();
 				if (line.startsWith("/quit")) {
 					break;
 				}
@@ -184,11 +185,7 @@ class clientThread111 extends Thread {
 									if (threads[i] != null && threads[i] != this && threads[i].clientName != null
 											&& threads[i].clientName.equals(words[0])) {
 										threads[i].pos.println(aes.encrypt("*<" + name + ">* "+ words[1]));
-										
-										/*
-										 * Echo this message to let the client
-										 * know the private message was sent.
-										 */
+										//Echo this message to let the client know the private message was sent.
 										this.pos.println("***" + name + ">>> " + words[1]);
 										break;
 									}
@@ -197,14 +194,11 @@ class clientThread111 extends Thread {
 						}
 					}
 				} else {
-					/*
-					 * The message is public, broadcast it to all other clients.
-					 */
+					//The message is public, broadcast it to all other clients.
 					synchronized (this) {
-						
 						for (int i = 0; i < maxClientsCount; i++) {
 							if (threads[i] != null && threads[i].clientName != null) {
-								threads[i].pos.println(aes.encrypt("*<" + name + ">* " + "@@" + line));
+								threads[i].pos.println(aes.encrypt("*<" + name + ">* " +line));
 							}
 						}
 					}
@@ -227,6 +221,7 @@ class clientThread111 extends Thread {
 			}
 			is.close();
 			pos.close();
+			br.close();
 			dos.close();
 			clientSocket.close();
 		} catch (Exception e) {

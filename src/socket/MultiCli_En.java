@@ -29,15 +29,13 @@ public class MultiCli_En implements Runnable {
 	private static DataInputStream is = null;
 
 	private static BufferedReader inputLine = null;
+	private static BufferedReader br = null;
 	private static boolean closed = false;
 	static PublicKey serverPublicKey;
 	static String aeskey;
 
 	public static void main(String[] args) throws ClassNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-
-		// The default port.
 		int portNumber = 2222;
-		// The default host.
 		String host = "localhost";
 
 		if (args.length < 2) {
@@ -48,15 +46,11 @@ public class MultiCli_En implements Runnable {
 			portNumber = Integer.valueOf(args[1]).intValue();
 		}
 
-		/*
-		 * Open a socket on a given host and port. Open input and output
-		 * streams.
-		 */
 		try {
 			clientSocket = new Socket(host, portNumber);
 			inputLine = new BufferedReader(new InputStreamReader(System.in));
 			os = new PrintStream(clientSocket.getOutputStream());
-			is = new DataInputStream(clientSocket.getInputStream());
+			br = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 			DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
 			ObjectInputStream ois = new ObjectInputStream(clientSocket.getInputStream());
 			serverPublicKey = (PublicKey) ois.readObject();
@@ -88,45 +82,36 @@ public class MultiCli_En implements Runnable {
 		 * If everything has been initialized then we want to write some data to
 		 * the socket we have opened a connection to on the port portNumber.
 		 */
-		if (clientSocket != null && os != null && is != null) {
+		if (clientSocket != null && os != null && br != null) {
 			try {
 
-				/* Create a thread to read from the server. */
+				// Create a thread to read from the server. 
 				new Thread(new MultiCli_En()).start();
 				while (!closed) {
 					os.println(inputLine.readLine().trim());
 				}
-				/*
-				 * Close the output stream, close the input stream, close the
-				 * socket.
-				 */
 				os.close();
 				is.close();
+				br.close();
 				clientSocket.close();
 			} catch (IOException e) {
 				System.err.println("IOException:  " + e);
 			}
 		}
 	}
-
-	/*
-	 * Create a thread to read from the server. (non-Javadoc)
-	 * 
-	 * @see java.lang.Runnable#run()
-	 */
+	
 	public void run() {
-		/*
-		 * Keep on reading from the socket till we receive "Bye" from the
-		 * server. Once we received that then we want to break.
-		 */
 		String responseLine;
 		try {
-			while ((responseLine = is.readLine()) != null) {
-//				AES aes = new AES(aeskey);
-//				String decdata = aes.decrypt(responseLine);
-//				System.out.println(decdata);
-				
-				System.out.println(responseLine);
+			while ((responseLine = br.readLine()) != null) {
+				byte[] b = responseLine.getBytes();
+				int len = b.length;
+				System.out.println(len);
+				AES aes = new AES("asilkjdhgbytksgr");
+				//System.out.println(responseLine);
+				String decdata = aes.decrypt(responseLine);
+				System.out.println(decdata);
+				//System.out.println(responseLine);
 				if (responseLine.indexOf("*** Bye") != -1)
 					break;
 			}

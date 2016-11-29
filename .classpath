@@ -6,5 +6,7 @@
 			<accessrule kind="accessible" pattern="**"/>
 		</accessrules>
 	</classpathentry>
+	<classpathentry kind="lib" path="/Users/binrucao/Downloads/org-apache-commons-codec.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

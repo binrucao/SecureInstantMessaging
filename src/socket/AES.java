@@ -9,6 +9,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
+import org.apache.commons.codec.binary.Base64;
 
 public class AES {
 
