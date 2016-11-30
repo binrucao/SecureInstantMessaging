@@ -26,7 +26,6 @@ import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
-
 import javax.crypto.Cipher;
 
 import javax.crypto.spec.SecretKeySpec;
@@ -46,56 +45,67 @@ public class client_tread {
 	public client_tread() {
 	}
 
-	private static String CLIENT_KEY_STORE = "/Users/binrucao/client_ks";   
+	private static String CLIENT_KEY_STORE = "/Users/binrucao/client_ks";
 	private static String CLIENT_KEY_STORE_PASSWORD = "client";
 	private TextArea ta;
-	
 	private TextField tf;
 	private static Socket sock;
 	private static DataInputStream dis;
 	private static DataOutputStream dos;
-    private static ObjectInputStream ois;
-    private static ObjectOutputStream oos;
+	private static ObjectInputStream ois;
+	private static ObjectOutputStream oos;
 
-	public static void main(String[] args) throws Exception
-	{
-//		Log3 frameTabel = new Log3();
-//		frameTabel.actionlogin();
-		
+	public static void main(String[] args) throws Exception {
+		Log3 frameTabel = new Log3();
+		frameTabel.actionlogin();
+		int counter = 0;
+		while (true) {
+			// System.out.println(counter++);
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			if (frameTabel.getLoginFlag() == true) {
+				break;
+			}
+		}
+
 		client_tread client = new client_tread();
 		client.connect();
 
-			dos = new DataOutputStream(sock.getOutputStream());
-			ois = new ObjectInputStream(sock.getInputStream());
-			dis = new DataInputStream(sock.getInputStream());
+		dos = new DataOutputStream(sock.getOutputStream());
+		ois = new ObjectInputStream(sock.getInputStream());
+		dis = new DataInputStream(sock.getInputStream());
 
-			PublicKey serverPublicKey = (PublicKey) ois.readObject();
+		PublicKey serverPublicKey = (PublicKey) ois.readObject();
 
-			KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
-			keyGen.initialize(512);
-			KeyPair clientKey = keyGen.generateKeyPair();
-			PublicKey clientPublicKey = clientKey.getPublic();
-			PrivateKey clientPrivateKey = clientKey.getPrivate();
+		KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+		keyGen.initialize(512);
+		KeyPair clientKey = keyGen.generateKeyPair();
+		PublicKey clientPublicKey = clientKey.getPublic();
+		PrivateKey clientPrivateKey = clientKey.getPrivate();
 
-			ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream());
+		ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream());
 
-			oos.writeObject(clientPublicKey);
-			oos.flush();
+		oos.writeObject(clientPublicKey);
+		oos.flush();
 
-			AES aes = new AES("asilkjdhgbytksgr");
-			SecretKeySpec aeskey1 = aes.generateKey();
-			byte[] aeskey2 = aeskey1.getEncoded();
-			String aeskey = new String(aeskey2);
+		AES aes = new AES("asilkjdhgbytksgr");
+		SecretKeySpec aeskey1 = aes.generateKey();
+		byte[] aeskey2 = aeskey1.getEncoded();
+		String aeskey = new String(aeskey2);
 
-			Cipher cipherkey = Cipher.getInstance("RSA");
-			cipherkey.init(Cipher.ENCRYPT_MODE, serverPublicKey);
-			byte[] cipheraeskey = cipherkey.doFinal(aeskey.getBytes());
-			String cipheraeskey1 = new String(cipheraeskey);
+		Cipher cipherkey = Cipher.getInstance("RSA");
+		cipherkey.init(Cipher.ENCRYPT_MODE, serverPublicKey);
+		byte[] cipheraeskey = cipherkey.doFinal(aeskey.getBytes());
+		String cipheraeskey1 = new String(cipheraeskey);
 
-			dos.writeInt(cipheraeskey.length);
-			dos.write(cipheraeskey);
-			dos.flush();
-		
+		dos.writeInt(cipheraeskey.length);
+		dos.write(cipheraeskey);
+		dos.flush();
+
 		client.createUI(aeskey);
 		System.out.println("Create a new thread");
 		client.createThread(aeskey);
@@ -103,15 +113,36 @@ public class client_tread {
 
 	}
 
-	public void connect() throws Exception{
-		try{
-			System.setProperty("javax.net.ssl.trustStore", CLIENT_KEY_STORE);   
-	        System.setProperty("javax.net.debug", "ssl,handshake"); 
-	        sock = clientWithCert();  
-		}catch (IOException e) {
-            e.printStackTrace();
-        }
+	public void connect() throws Exception {
+		try {
+			System.setProperty("javax.net.ssl.trustStore", CLIENT_KEY_STORE);
+			System.setProperty("javax.net.debug", "ssl,handshake");
+			sock = clientWithCert();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
+	
+//	private Socket clientWithoutCert() throws Exception {
+//		SocketFactory sf = SSLSocketFactory.getDefault();
+//		Socket s = sf.createSocket("localhost", 8443);
+//		return s;
+//	}
+
+	private static Socket clientWithCert() throws Exception {
+		SSLContext context = SSLContext.getInstance("TLS");
+		KeyStore ks = KeyStore.getInstance("jceks");
+
+		ks.load(new FileInputStream(CLIENT_KEY_STORE), null);
+		KeyManagerFactory kf = KeyManagerFactory.getInstance("SunX509");
+		kf.init(ks, CLIENT_KEY_STORE_PASSWORD.toCharArray());
+		context.init(kf.getKeyManagers(), null, null);
+
+		SocketFactory factory = context.getSocketFactory();
+		Socket s = factory.createSocket("localhost", 8443);
+		return s;
+	}
+
 	public void createUI(String aeskey) {
 		Frame f = new Frame("Client");
 		f.setBackground(new Color(250, 240, 230));
@@ -145,79 +176,59 @@ public class client_tread {
 
 	public TextArea getTextArea() {
 		return ta;
-	} 
+	}
 
-	public void createThread(String aeskey){
+	public void createThread(String aeskey) {
 		RecieveThread receiver = new RecieveThread(sock, this, aeskey);
 		receiver.start();
 	}
-	
-	public void close(){
+
+	public void close() {
 		try {
-            dis.close();
-            dos.close();
-            sock.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+			dis.close();
+			dos.close();
+			sock.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public DataInputStream getDataInputStream() {
-        return dis;
-    }
-
-    public DataOutputStream getDataOutputStream() {
-        return dos;
-    }
-    public ObjectInputStream getObjectInputStream(){
-    	return ois;
-    }
-    public ObjectOutputStream getObjectOutputStream(){
-    	return oos;
-    }
-    
-	private Socket clientWithoutCert() throws Exception {   
-		SocketFactory sf = SSLSocketFactory.getDefault();   
-		Socket s = sf.createSocket("localhost", 8443);   
-		return s;   
+		return dis;
 	}
-	private static Socket clientWithCert() throws Exception {   
-		SSLContext context = SSLContext.getInstance("TLS");   
-		KeyStore ks = KeyStore.getInstance("jceks");   
 
-		ks.load(new FileInputStream(CLIENT_KEY_STORE), null);   
-		KeyManagerFactory kf = KeyManagerFactory.getInstance("SunX509");   
-		kf.init(ks, CLIENT_KEY_STORE_PASSWORD.toCharArray());   
-		context.init(kf.getKeyManagers(), null, null);   
+	public DataOutputStream getDataOutputStream() {
+		return dos;
+	}
 
-		SocketFactory factory = context.getSocketFactory();   
-		Socket s = factory.createSocket("localhost", 8443);   
-		return s;   
-	} 
+	public ObjectInputStream getObjectInputStream() {
+		return ois;
+	}
+
+	public ObjectOutputStream getObjectOutputStream() {
+		return oos;
+	}
+
 }
 
-class SendThread implements ActionListener{
+class SendThread implements ActionListener {
 	private client_tread client;
 	private String aeskey;
 	private Socket sock;
-    String msgtoServerString;
-    TextField tf;
+	String msgtoServerString;
+	TextField tf;
 
-	public SendThread(Socket sock, client_tread client, String aeskey)
-	{
+	public SendThread(Socket sock, client_tread client, String aeskey) {
 		this.sock = sock;
 		this.aeskey = aeskey;
 		this.client = client;
-	}//end constructor
+	}// end constructor
 
 	public void actionPerformed(ActionEvent e) {
 		tf = client.getTextField();
 		msgtoServerString = tf.getText();
 		client.getTextArea().append("Me: " + msgtoServerString + "\n");
 		AES aes = new AES("asilkjdhgbytksgr");
-		SecretKeySpec aeskey1 = aes.generateKey();
-		byte[] aeskey2 = aeskey1.getEncoded();
-		String aeskey = new String(aeskey2);
 		String encdata = null;
 		try {
 			encdata = aes.encrypt(msgtoServerString);
@@ -227,24 +238,23 @@ class SendThread implements ActionListener{
 		}
 		System.out.println("encrypted data - " + encdata);
 		byte[] cip = encdata.getBytes();
-		try{
+		try {
 			client.getDataOutputStream().writeInt(cip.length);
 			client.getDataOutputStream().write(cip);
 			client.getDataOutputStream().flush();
-			}catch(IOException e1){
-				e1.printStackTrace();
-			}
-		if (msgtoServerString.equals("EXIT")){
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		if (msgtoServerString.equals("EXIT")) {
 			client.close();
-            System.exit(0);
+			System.exit(0);
 		}
 		tf.setText("");
-        tf.requestFocus();
+		tf.requestFocus();
 	}// end run method
 }// end class
 
-class RecieveThread extends Thread 
-{
+class RecieveThread extends Thread {
 	private client_tread client;
 	private Socket sock;
 	private String aeskey;
@@ -253,18 +263,22 @@ class RecieveThread extends Thread
 		this.sock = sock;
 		this.aeskey = aeskey;
 		this.client = client;
-	}//end constructor
+	}// end constructor
+
 	public void run() {
 		DataInputStream DIS = client.getDataInputStream();
 		TextArea ta = client.getTextArea();
-		try{
-		
-			while(true){
-				int length_message  = DIS.readInt();
+		try {
+
+			while (true) {
+				int length_message = DIS.readInt();
 				byte[] cipherText = null;
-				if(length_message>0) {
+				if (length_message > 0) {
 					cipherText = new byte[length_message];
-					DIS.readFully(cipherText, 0, cipherText.length); // read the encrypted AES key
+					DIS.readFully(cipherText, 0, cipherText.length); // read the
+																		// encrypted
+																		// AES
+																		// key
 				}
 				System.out.println("The encrypted Message from server is: " + cipherText);
 				String messageCipher = new String(cipherText);
@@ -274,15 +288,16 @@ class RecieveThread extends Thread
 				System.out.println("The Message from server is: " + decdata);
 				ta.append("Server: " + decdata + "\n");
 
-				if(decdata.equals("EXIT")){
+				if (decdata.equals("EXIT")) {
 					client.close();
 					System.exit(0);
-                }
+				}
 			}
-		}catch(Exception e){System.out.println(e.getMessage());}
-	}//end run
-}//end class recieve thread
-
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
+	}// end run
+}// end class recieve thread
 
 class Log3 extends JFrame {
 
@@ -290,9 +305,10 @@ class Log3 extends JFrame {
 	JPanel panel = new JPanel();
 	JTextField txuser = new JTextField(15);
 	JPasswordField pass = new JPasswordField(15);
+	boolean isSuccessfullyLogin = false;
 
 	Log3() {
-		super("Login Autentification");
+		super("Client Login Autentification");
 		setSize(300, 200);
 		setLocation(500, 280);
 		panel.setLayout(null);
@@ -311,15 +327,20 @@ class Log3 extends JFrame {
 		actionlogin();
 	}
 
+	public boolean getLoginFlag() {
+		return isSuccessfullyLogin;
+	}
+
 	public void actionlogin() {
 		blogin.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent ae) {
 				String puname = txuser.getText();
 				String ppaswd = pass.getText();
 				if (puname.equals("test") && ppaswd.equals("12345")) {
-//					// newframe regFace = new newframe();
-//					client_tread regFace = new client_tread();
-//					regFace.setVisible(true);
+					// newframe regFace = new newframe();
+					// client_tread regFace = new client_tread();
+					// regFace.setVisible(true);
+					isSuccessfullyLogin = true;
 					dispose();
 				} else {
 

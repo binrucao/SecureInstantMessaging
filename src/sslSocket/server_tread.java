@@ -63,12 +63,25 @@ public class server_tread {
 	public static void main(String[] args) throws IOException, NoSuchAlgorithmException, ClassNotFoundException,
 			NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException,
 			KeyStoreException, CertificateException, UnrecoverableKeyException, KeyManagementException {
-
+//
 		Log2 frameTabel = new Log2();
 		frameTabel.actionlogin();
+		int counter = 0;
+		while(true) {
+//			System.out.println(counter++);
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			if(frameTabel.getLoginFlag() == true) {
+				break;
+			}
+		}
+//		
 //		if(frameTabel.authenticate() == true){
-			
-		int port = 8443;
+		System.out.println("Waiting for connection.");
 		server_tread server = new server_tread();
 		server.connect();
 
@@ -76,7 +89,7 @@ public class server_tread {
 		keyGen.initialize(512);
 		KeyPair serverKey = keyGen.generateKeyPair();
 		PublicKey serverPublicKey = serverKey.getPublic();
-		PrivateKey serverPrivateKey = serverKey.getPrivate();
+//		PrivateKey serverPrivateKey = serverKey.getPrivate();
 
 		// send server's public key to client
 		oos = new ObjectOutputStream(clientSocket.getOutputStream());
@@ -131,6 +144,7 @@ public class server_tread {
 			ss = factory.createServerSocket(port);
 			((SSLServerSocket) ss).setNeedClientAuth(true);
 			clientSocket = ss.accept();
+			
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -279,10 +293,6 @@ class SendToClientThread implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		tf = server.getTextField();
 		msgtoClientString = tf.getText();
-//		server.getTextArea().setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
-//		server.getTextArea().append("Me: " + msgtoClientString + "\n");
-		
-		//server.getTextPane().setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
 		server.getTextPane().setText(server.getTextPane().getText() + "Me: " + msgtoClientString + "\n");
 		
 		
@@ -322,9 +332,10 @@ class Log2 extends JFrame {
 	JPanel panel = new JPanel();
 	JTextField txuser = new JTextField(15);
 	JPasswordField pass = new JPasswordField(15);
+	boolean isSuccessfullyLogin = false;
 
 	Log2() {
-		super("Login Autentification");
+		super("Server Login Autentification");
 		setSize(300, 200);
 		setLocation(500, 280);
 		panel.setLayout(null);
@@ -343,15 +354,19 @@ class Log2 extends JFrame {
 		actionlogin();
 	}
 
+	public boolean getLoginFlag() {
+		return isSuccessfullyLogin;
+	}
+	
 	public void actionlogin() {
 		blogin.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent ae) {
 				String puname = txuser.getText();
 				String ppaswd = pass.getText();
 				if (puname.equals("test") && ppaswd.equals("12345")) {
-//					// newframe regFace = new newframe();
-//					client_tread regFace = new client_tread();
+//					newframe regFace = new newframe();
 //					regFace.setVisible(true);
+					isSuccessfullyLogin = true;
 					dispose();
 				} else {
 
@@ -364,16 +379,5 @@ class Log2 extends JFrame {
 			}
 		});
 	}
-	
-	public boolean authenticate(){
-		String puname = txuser.getText();
-		String ppaswd = pass.getText();
-		if (puname.equals("test") && ppaswd.equals("12345")) {
-            return true;
-        }
-		else if(puname == null || ppaswd == null){
-			return false;
-		}
-        return false;
-	}
+
 }
