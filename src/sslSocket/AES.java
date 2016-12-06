@@ -1,8 +1,5 @@
 package sslSocket;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;

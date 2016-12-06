@@ -1,22 +1,25 @@
 package sslSocket;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
 
 public class Log extends JFrame {
-
-	public static void main(String[] args) {
-		Log frameTabel = new Log();
-	}
 
 	JButton blogin = new JButton("Login");
 	JPanel panel = new JPanel();
 	JTextField txuser = new JTextField(15);
 	JPasswordField pass = new JPasswordField(15);
+	boolean isSuccessfullyLogin = false;
 
 	Log() {
-		super("Login Autentification");
+		super("Client Login Autentification");
 		setSize(300, 200);
 		setLocation(500, 280);
 		panel.setLayout(null);
@@ -35,24 +38,24 @@ public class Log extends JFrame {
 		actionlogin();
 	}
 
+	public boolean getLoginFlag() {
+		return isSuccessfullyLogin;
+	}
+
 	public void actionlogin() {
 		blogin.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent ae) {
 				String puname = txuser.getText();
 				String ppaswd = pass.getText();
-				if (puname.equals("test") && ppaswd.equals("12345")) {
-					newframe regFace = new newframe();
-					//client_tread regFace = new client_tread();
-					regFace.setVisible(true);
+				if (puname.equals("Group1") && ppaswd.equals("12345")) {
+					isSuccessfullyLogin = true;
 					dispose();
 				} else {
-
 					JOptionPane.showMessageDialog(null, "Wrong Password / Username");
 					txuser.setText("");
 					pass.setText("");
 					txuser.requestFocus();
 				}
-
 			}
 		});
 	}
